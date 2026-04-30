@@ -7,9 +7,7 @@ import os
 
 auth_bp = Blueprint("auth", __name__)
 
-# -------------------------------
-# 🔐 REGISTER
-# -------------------------------
+
 @auth_bp.route("/auth/register", methods=["POST"])
 def register():
     data = request.json
@@ -41,10 +39,6 @@ def register():
     print("✅ User registered:", email)
     return jsonify({"msg": "User registered successfully"})
 
-
-# -------------------------------
-# 🔐 LOGIN
-# -------------------------------
 @auth_bp.route("/auth/login", methods=["POST"])
 def login():
     data = request.json
@@ -73,11 +67,6 @@ def login():
     except Exception as e:
         print("Login error:", e)
         return jsonify({"error": "Login failed"}), 500
-
-
-# -------------------------------
-# 📧 EMAIL FUNCTION
-# -------------------------------
 def send_email(receiver_email, report_path):
     sender_email = "taduvayi.manjari@gmail.com"
     app_password = "YOUR_APP_PASSWORD"   # 🔥 replace with Gmail App Password
@@ -106,9 +95,6 @@ def send_email(receiver_email, report_path):
     print("📧 Email sent to:", receiver_email)
 
 
-# -------------------------------
-# 📤 SHARE REPORT (FIXED ROUTE)
-# -------------------------------
 @auth_bp.route("/share", methods=["POST"])
 def share_report():
     data = request.json
