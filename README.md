@@ -114,6 +114,7 @@ app_password = "your_app_password"
 * Real-time image processing
 * Direct mouth image capture using camera
 * Integration with advanced AI models
+
 ⚠️ Note
 
 * Dataset is not included in this repository due to size constraints
