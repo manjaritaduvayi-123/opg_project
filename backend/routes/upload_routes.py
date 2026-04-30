@@ -13,12 +13,11 @@ upload_bp = Blueprint('upload', __name__)
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# ✅ Model
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(BASE_DIR, "..", "best.pt")
 model = YOLO(MODEL_PATH)
 
-# ✅ Classes
+
 CLASS_NAMES = [
     "Caries",
     "Crown",
@@ -27,7 +26,7 @@ CLASS_NAMES = [
     "Impacted_tooth"
 ]
 
-# ✅ Suggestions
+
 SUGGESTIONS = {
     "Caries": "Tooth decay detected. Filling or root canal may be required.",
     "Crown": "Crown is present. Regular dental checkup recommended.",
@@ -37,7 +36,7 @@ SUGGESTIONS = {
 }
 
 
-# 🔍 Upload + Analyze
+
 @upload_bp.route("/upload", methods=["POST"])
 def upload_file():
     try:
@@ -47,12 +46,12 @@ def upload_file():
         file = request.files['file']
         email = request.form.get("email")
 
-        # 📁 Save original image
+        
         filename = f"{int(time.time())}_{secure_filename(file.filename)}"
         filepath = os.path.join(UPLOAD_FOLDER, filename)
         file.save(filepath)
 
-        # 🔥 Predict
+        
         results = model.predict(
             source=filepath,
             conf=0.5,
@@ -81,7 +80,7 @@ def upload_file():
                     "suggestion": SUGGESTIONS.get(class_name, "Consult a dentist")
                 })
 
-        # 🔥 Remove duplicates (keep highest confidence)
+        
         unique_results = {}
         for item in raw_output:
             cls = item["class"]
@@ -91,10 +90,10 @@ def upload_file():
         output = list(unique_results.values())
         output = sorted(output, key=lambda x: x["confidence"], reverse=True)
 
-        # 🔥 Top defect
+        
         top_defect = output[0]["class"] if output else "No Detection"
 
-        # 💾 Save DB
+        
         reports.insert_one({
             "email": email,
             "file": filename,
@@ -102,12 +101,12 @@ def upload_file():
             "top_defect": top_defect
         })
 
-        # 📄 PDF
+        
         pdf_name = f"{filename.split('.')[0]}_report.pdf"
         pdf_path = os.path.join(UPLOAD_FOLDER, pdf_name)
         generate_pdf(output, filepath, pdf_path)
 
-        # 🔥 Draw CLEAN boxes (no confidence text)
+        
         clean_name = f"det_{filename}"
         clean_path = os.path.join(UPLOAD_FOLDER, clean_name)
 
@@ -115,7 +114,6 @@ def upload_file():
             plotted = r.plot(labels=True, conf=False)
             cv2.imwrite(clean_path, plotted)
 
-        # ✅ FINAL RESPONSE (IMPORTANT)
         return jsonify({
             "message": "Analysis complete",
             "file": filename,                     # 🔥 REQUIRED for frontend
@@ -130,13 +128,13 @@ def upload_file():
         return jsonify({"error": str(e)}), 500
 
 
-# 🔥 Serve images
+
 @upload_bp.route('/uploads/<path:filename>')
 def serve_upload(filename):
     return send_from_directory(UPLOAD_FOLDER, filename)
 
 
-# 📧 Share report
+
 @upload_bp.route("/share", methods=["POST"])
 def share_report():
     try:
@@ -164,7 +162,7 @@ def share_report():
         return jsonify({"error": str(e)}), 500
 
 
-# 📜 History
+
 @upload_bp.route("/history/<email>", methods=["GET"])
 def history(email):
     try:
