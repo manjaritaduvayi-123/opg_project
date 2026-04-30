@@ -1,0 +1,39 @@
+train: /content/drive/MyDrive/opg_project/opg_dataset/images/train
+val: /content/drive/MyDrive/opg_project/opg_dataset/images/val
+
+nc: 31
+
+names:
+  [
+    "Caries",
+    "Crown",
+    "Filling",
+    "Implant",
+    "Malaligned",
+    "Mandibular Canal",
+    "Missing teeth",
+    "Periapical lesion",
+    "Retained root",
+    "Root Canal Treatment",
+    "Root Piece",
+    "Impacted tooth",
+    "Maxillary sinus",
+    "Bone Loss",
+    "Fracture teeth",
+    "Permanent Teeth",
+    "Supra Eruption",
+    "TAD",
+    "Abutment",
+    "Attrition",
+    "Bone defect",
+    "Gingival former",
+    "Metal band",
+    "Orthodontic brackets",
+    "Permanent retainer",
+    "Post-core",
+    "Plating",
+    "Wire",
+    "Cyst",
+    "Root resorption",
+    "Primary teeth"
+  ]

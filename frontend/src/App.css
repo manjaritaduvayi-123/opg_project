@@ -1,0 +1,120 @@
+/* 🌐 Global Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* 🌈 Background */
+body {
+  background: linear-gradient(135deg, #eef2f7, #fce4ec);
+  min-height: 100vh;
+}
+
+/* 📦 App Container */
+.App {
+  text-align: center;
+}
+
+/* 🧾 Card Style (reusable) */
+.card {
+  background: #ffffff;
+  padding: 20px;
+  margin: 20px auto;
+  border-radius: 12px;
+  max-width: 500px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+}
+
+/* 📝 Inputs */
+input {
+  width: 100%;
+  padding: 12px;
+  margin: 10px 0;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  outline: none;
+  transition: 0.3s;
+}
+
+input:focus {
+  border-color: #1976d2;
+  box-shadow: 0 0 5px rgba(25, 118, 210, 0.3);
+}
+
+/* 🔘 Buttons */
+button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  border: none;
+  border-radius: 8px;
+  background: #1976d2;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+button:hover {
+  background: #125ea8;
+}
+
+/* 🔗 Links */
+.link-btn {
+  background: none;
+  border: none;
+  color: #1976d2;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.link-btn:hover {
+  text-decoration: underline;
+}
+
+/* 🖼 Images */
+img {
+  max-width: 100%;
+  border-radius: 10px;
+  margin-top: 10px;
+}
+
+/* 🧠 Result Box */
+.result-box {
+  border: 1px solid #eee;
+  padding: 12px;
+  margin-top: 10px;
+  border-radius: 8px;
+  text-align: left;
+}
+
+/* 📜 History Card */
+.history-card {
+  border: 1px solid #eee;
+  padding: 12px;
+  margin-top: 10px;
+  border-radius: 8px;
+  text-align: left;
+  background: #fafafa;
+}
+
+/* 🔴 Error */
+.error {
+  color: #d32f2f;
+  font-size: 13px;
+  margin-top: 5px;
+}
+
+/* 🟢 Success */
+.success {
+  color: #2e7d32;
+}
+
+/* 📱 Responsive */
+@media (max-width: 600px) {
+  .card {
+    width: 90%;
+  }
+}

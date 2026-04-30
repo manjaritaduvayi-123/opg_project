@@ -1,0 +1,9 @@
+*.zip
+runs/
+*.pt
+opg_dataset/
+opg_dataset_filtered/
+all_images/
+all_labels/
+uploads/
+frontend/node_modules/
