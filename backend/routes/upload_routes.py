@@ -13,11 +13,19 @@ upload_bp = Blueprint('upload', __name__)
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+<<<<<<< HEAD
+=======
+# 🔥 MODEL
+>>>>>>> 24ab891 (Updated dashboard UI, added loader, fixed email sharing)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(BASE_DIR, "..", "best.pt")
 model = YOLO(MODEL_PATH)
 
+<<<<<<< HEAD
 
+=======
+# 🔥 CLASSES
+>>>>>>> 24ab891 (Updated dashboard UI, added loader, fixed email sharing)
 CLASS_NAMES = [
     "Caries",
     "Crown",
@@ -26,7 +34,11 @@ CLASS_NAMES = [
     "Impacted_tooth"
 ]
 
+<<<<<<< HEAD
 
+=======
+# 🔥 SUGGESTIONS
+>>>>>>> 24ab891 (Updated dashboard UI, added loader, fixed email sharing)
 SUGGESTIONS = {
     "Caries": "Tooth decay detected. Filling or root canal may be required.",
     "Crown": "Crown is present. Regular dental checkup recommended.",
@@ -36,7 +48,13 @@ SUGGESTIONS = {
 }
 
 
+<<<<<<< HEAD
 
+=======
+# -------------------------------
+# 🔍 UPLOAD + ANALYZE
+# -------------------------------
+>>>>>>> 24ab891 (Updated dashboard UI, added loader, fixed email sharing)
 @upload_bp.route("/upload", methods=["POST"])
 def upload_file():
     try:
@@ -46,12 +64,20 @@ def upload_file():
         file = request.files['file']
         email = request.form.get("email")
 
+<<<<<<< HEAD
         
+=======
+        # 📁 Save original
+>>>>>>> 24ab891 (Updated dashboard UI, added loader, fixed email sharing)
         filename = f"{int(time.time())}_{secure_filename(file.filename)}"
         filepath = os.path.join(UPLOAD_FOLDER, filename)
         file.save(filepath)
 
+<<<<<<< HEAD
         
+=======
+        # 🔥 YOLO PREDICTION
+>>>>>>> 24ab891 (Updated dashboard UI, added loader, fixed email sharing)
         results = model.predict(
             source=filepath,
             conf=0.5,
@@ -80,7 +106,11 @@ def upload_file():
                     "suggestion": SUGGESTIONS.get(class_name, "Consult a dentist")
                 })
 
+<<<<<<< HEAD
         
+=======
+        # 🔥 REMOVE DUPLICATES
+>>>>>>> 24ab891 (Updated dashboard UI, added loader, fixed email sharing)
         unique_results = {}
         for item in raw_output:
             cls = item["class"]
@@ -90,10 +120,17 @@ def upload_file():
         output = list(unique_results.values())
         output = sorted(output, key=lambda x: x["confidence"], reverse=True)
 
+<<<<<<< HEAD
         
         top_defect = output[0]["class"] if output else "No Detection"
 
         
+=======
+        # 🔥 TOP DEFECT
+        top_defect = output[0]["class"] if output else "No Detection"
+
+        # 💾 SAVE TO DB
+>>>>>>> 24ab891 (Updated dashboard UI, added loader, fixed email sharing)
         reports.insert_one({
             "email": email,
             "file": filename,
@@ -101,12 +138,20 @@ def upload_file():
             "top_defect": top_defect
         })
 
+<<<<<<< HEAD
         
+=======
+        # 📄 GENERATE PDF
+>>>>>>> 24ab891 (Updated dashboard UI, added loader, fixed email sharing)
         pdf_name = f"{filename.split('.')[0]}_report.pdf"
         pdf_path = os.path.join(UPLOAD_FOLDER, pdf_name)
         generate_pdf(output, filepath, pdf_path)
 
+<<<<<<< HEAD
         
+=======
+        # 🔥 CREATE YOLO OUTPUT IMAGE
+>>>>>>> 24ab891 (Updated dashboard UI, added loader, fixed email sharing)
         clean_name = f"det_{filename}"
         clean_path = os.path.join(UPLOAD_FOLDER, clean_name)
 
@@ -114,10 +159,16 @@ def upload_file():
             plotted = r.plot(labels=True, conf=False)
             cv2.imwrite(clean_path, plotted)
 
+<<<<<<< HEAD
+=======
+        print("✅ Saved YOLO image:", clean_path)
+
+        # ✅ FINAL RESPONSE (FIXED)
+>>>>>>> 24ab891 (Updated dashboard UI, added loader, fixed email sharing)
         return jsonify({
             "message": "Analysis complete",
-            "file": filename,                     # 🔥 REQUIRED for frontend
-            "image": f"uploads/{clean_name}",     # clean image
+            "file": filename,
+            "image": clean_name,   # 🔥 FIXED (no uploads/)
             "pdf": pdf_name,
             "predictions": output,
             "top_defect": top_defect
@@ -128,26 +179,52 @@ def upload_file():
         return jsonify({"error": str(e)}), 500
 
 
+<<<<<<< HEAD
 
+=======
+# -------------------------------
+# 📂 SERVE IMAGES
+# -------------------------------
+>>>>>>> 24ab891 (Updated dashboard UI, added loader, fixed email sharing)
 @upload_bp.route('/uploads/<path:filename>')
 def serve_upload(filename):
     return send_from_directory(UPLOAD_FOLDER, filename)
 
 
+<<<<<<< HEAD
 
+=======
+# -------------------------------
+# 📧 SHARE REPORT
+# -------------------------------
+>>>>>>> 24ab891 (Updated dashboard UI, added loader, fixed email sharing)
 @upload_bp.route("/share", methods=["POST"])
 def share_report():
     try:
         data = request.json
+        print("🔥 Incoming data:", data)  # DEBUG
+
         email = data.get("email")
         file_name = data.get("file")
 
-        pdf_name = f"{file_name.split('.')[0]}_report.pdf"
+        # ✅ VALIDATIONS
+        if not email:
+            return jsonify({"error": "Email is required"}), 400
+
+        if not file_name:
+            return jsonify({"error": "File name missing"}), 400
+
+        # ✅ BUILD PDF NAME
+        base_name = os.path.splitext(file_name)[0]   # 🔥 safer than split
+        pdf_name = f"{base_name}_report.pdf"
         pdf_path = os.path.join(UPLOAD_FOLDER, pdf_name)
 
-        if not os.path.exists(pdf_path):
-            return jsonify({"error": "Report not found"}), 400
+        print("📄 PDF path:", pdf_path)
 
+        if not os.path.exists(pdf_path):
+            return jsonify({"error": f"Report not found: {pdf_name}"}), 400
+
+        # ✅ SEND EMAIL
         send_email(
             to_email=email,
             subject="Dental Report",
@@ -155,14 +232,22 @@ def share_report():
             attachment_path=pdf_path
         )
 
+        print("📧 Email sent to:", email)
+
         return jsonify({"msg": "Email sent successfully"})
 
     except Exception as e:
         print("❌ Share Error:", str(e))
         return jsonify({"error": str(e)}), 500
 
+<<<<<<< HEAD
 
 
+=======
+# -------------------------------
+# 📜 HISTORY
+# -------------------------------
+>>>>>>> 24ab891 (Updated dashboard UI, added loader, fixed email sharing)
 @upload_bp.route("/history/<email>", methods=["GET"])
 def history(email):
     try:

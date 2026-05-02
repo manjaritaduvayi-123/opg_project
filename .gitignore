@@ -7,3 +7,8 @@ all_images/
 all_labels/
 uploads/
 frontend/node_modules/
+removed_images/
+new_missing_teeth_images/
+backend/*.pdf
+ count.py
+ opg_labels/

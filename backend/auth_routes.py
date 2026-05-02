@@ -129,6 +129,7 @@ def send_report():
 
         # 🔥 Send email
         send_email(email, output_image)
+        print("Incoming data:", data)
 
         return jsonify({"msg": "Report sent successfully"})
 

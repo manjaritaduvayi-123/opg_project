@@ -1,5 +1,5 @@
-import axios from "axios";
 import { useEffect, useState } from "react";
+import axios from "axios";
 
 function Dashboard() {
   const [file, setFile] = useState(null);
@@ -7,334 +7,270 @@ function Dashboard() {
   const [result, setResult] = useState([]);
   const [history, setHistory] = useState([]);
   const [shareEmail, setShareEmail] = useState("");
-  const [selectedImage, setSelectedImage] = useState(null);
-
-  const [detectedImage, setDetectedImage] = useState(null);
-  const [pdf, setPdf] = useState(null);
-  const [topDefect, setTopDefect] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [pdf, setPdf] = useState("");
+  const [loading, setLoading] = useState(false); // 🔥 NEW
 
   const email = localStorage.getItem("email");
 
-  // 🎯 Helpers
-  const getColor = (conf) => {
-    if (conf > 0.8) return "#2e7d32";
-    if (conf > 0.5) return "#ed6c02";
-    return "#d32f2f";
-  };
+  useEffect(() => {
+    if (!email) return;
 
-  const getSeverity = (conf) => {
-    if (conf > 0.8) return "High";
-    if (conf > 0.5) return "Medium";
-    return "Low";
-  };
+    axios
+      .get(`http://127.0.0.1:5000/history/${email}`)
+      .then((res) => setHistory(res.data))
+      .catch(() => console.log("No history"));
+  }, [email]);
 
-  // 🔍 Upload & Analyze
+  // 🔥 UPLOAD WITH LOADER
   const handleUpload = async () => {
-    if (!file) return alert("Select a file first");
+    if (!file) return alert("Select file first");
 
     const formData = new FormData();
     formData.append("file", file);
     formData.append("email", email);
 
     try {
-      setLoading(true);
+      setLoading(true); // 🔥 START
 
-      const res = await axios.post("http://127.0.0.1:5000/upload", formData);
+      const res = await axios.post(
+        "http://127.0.0.1:5000/upload",
+        formData
+      );
 
+      setPreview(res.data.image);
       setResult(res.data.predictions || []);
+      setPdf(res.data.pdf);
 
-      const img = `http://127.0.0.1:5000/uploads/det_${res.data.file}`;
-      setDetectedImage(img);
-
-      setPdf(`http://127.0.0.1:5000/uploads/${res.data.pdf}`);
-      setTopDefect(res.data.top_defect);
-
-      setLoading(false);
-      loadHistory();
     } catch (err) {
       console.error(err);
-      setLoading(false);
-      alert("Upload failed ❌");
+      alert("Upload failed");
+    } finally {
+      setLoading(false); // 🔥 STOP
     }
   };
 
-  // 📧 Share Report (🔥 FINAL FIX)
+  // 📧 SHARE
   const handleShare = async () => {
-    if (!shareEmail) return alert("Enter email");
-    if (!detectedImage) return alert("Analyze first");
+    if (!preview) return alert("No image to share");
+    if (!shareEmail) return alert("Enter email first");
 
     try {
-      // 🔥 Convert URL → local backend path
-      const imagePath = detectedImage.replace(
-        "http://127.0.0.1:5000/",
-        ""
-      );
-
-      console.log("Sending path:", imagePath);
-
-      const res = await axios.post("http://127.0.0.1:5000/share", {
-        email: shareEmail,
-        image_path: imagePath,
+      const res = await fetch("http://localhost:5000/share", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          email: shareEmail,
+          file: preview.replace("det_", "")
+        })
       });
 
-      console.log(res.data);
+      const data = await res.json();
 
-      alert("Report sent successfully ✅");
-    } catch (error) {
-      console.error(error);
-      alert("Failed ❌");
-    }
-  };
+      if (!res.ok) return alert(data.error);
 
-  // 📜 History
-  const loadHistory = async () => {
-    try {
-      const res = await axios.get(
-        `http://127.0.0.1:5000/history/${email}`
-      );
-      setHistory(res.data.reverse());
+      alert("✅ Report shared successfully");
     } catch (err) {
       console.error(err);
+      alert("Network error");
     }
   };
 
-  useEffect(() => {
-    loadHistory();
-  }, []);
+  const styles = {
+    container: {
+      padding: "30px",
+      background: "#f8fafc",
+      minHeight: "100vh",
+      fontFamily: "Segoe UI, sans-serif",
+    },
+    title: { marginBottom: "20px", fontWeight: "600" },
+    card: {
+      background: "white",
+      padding: "20px",
+      borderRadius: "12px",
+      boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
+      marginBottom: "20px",
+    },
+    grid: {
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+      gap: "20px",
+    },
+    image: { width: "100%", borderRadius: "10px" },
+    placeholder: { color: "#6b7280" },
 
-  const logout = () => {
-    localStorage.removeItem("email");
-    window.location = "/";
+    loaderContainer: {
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      height: "200px",
+    },
+
+    spinner: {
+      width: "40px",
+      height: "40px",
+      border: "4px solid #e5e7eb",
+      borderTop: "4px solid #2563eb",
+      borderRadius: "50%",
+      animation: "spin 1s linear infinite",
+    },
+
+    resultItem: {
+      display: "flex",
+      justifyContent: "space-between",
+      background: "#f1f5f9",
+      padding: "10px",
+      borderRadius: "6px",
+      marginTop: "8px",
+    },
+    input: {
+      width: "100%",
+      padding: "10px",
+      marginTop: "10px",
+      borderRadius: "6px",
+      border: "1px solid #ccc",
+    },
+    buttonRow: {
+      display: "flex",
+      gap: "10px",
+      marginTop: "10px",
+    },
+    primaryBtn: {
+      marginLeft: "10px",
+      background: "#2563eb",
+      color: "white",
+      padding: "10px 16px",
+      border: "none",
+      borderRadius: "6px",
+      cursor: "pointer",
+    },
+    shareBtn: {
+      background: "#16a34a",
+      color: "white",
+      padding: "10px",
+      border: "none",
+      borderRadius: "6px",
+      cursor: "pointer",
+    },
+    downloadBtn: {
+      background: "#2563eb",
+      color: "white",
+      padding: "10px",
+      border: "none",
+      borderRadius: "6px",
+      cursor: "pointer",
+    },
+    historyItem: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      background: "#f3f4f6",
+      padding: "12px",
+      borderRadius: "6px",
+      marginTop: "10px",
+    },
+    link: {
+      color: "#2563eb",
+      textDecoration: "none",
+      fontWeight: "bold",
+    },
   };
 
   return (
     <div style={styles.container}>
-      <h1>🦷 Dental AI Dashboard</h1>
+      <h1 style={styles.title}>🦷 Dental AI Dashboard</h1>
 
       {/* Upload */}
       <div style={styles.card}>
-        <h3>Upload X-ray</h3>
-
-        <input
-          type="file"
-          onChange={(e) => {
-            const selected = e.target.files[0];
-            setFile(selected);
-            setPreview(URL.createObjectURL(selected));
-            setResult([]);
-            setDetectedImage(null);
-          }}
-        />
-
-        {preview && <img src={preview} style={styles.image} />}
-
-        <button style={styles.primaryBtn} onClick={handleUpload}>
-          Analyze
-        </button>
-
-        {loading && <p>Processing...</p>}
-
-        <input
-          type="email"
-          placeholder="Enter email"
-          value={shareEmail}
-          onChange={(e) => setShareEmail(e.target.value)}
-          style={styles.input}
-        />
-
-        <button style={styles.secondaryBtn} onClick={handleShare}>
-          Share Report
+        <input type="file" onChange={(e) => setFile(e.target.files[0])} />
+        <button
+          style={styles.primaryBtn}
+          onClick={handleUpload}
+          disabled={loading}
+        >
+          {loading ? "Analyzing..." : "Analyze"}
         </button>
       </div>
 
-      {/* Detection */}
-      {detectedImage && (
+      {/* Main */}
+      <div style={styles.grid}>
         <div style={styles.card}>
-          <h3>Detection Result</h3>
-          <img
-            src={detectedImage}
-            style={styles.image}
-            onClick={() => setSelectedImage(detectedImage)}
-          />
-        </div>
-      )}
-
-      {/* Diagnosis */}
-      {topDefect && (
-        <div style={styles.summary}>
-          <h3>Diagnosis</h3>
-          <p><b>{topDefect}</b></p>
-        </div>
-      )}
-
-      {/* Results */}
-      <div style={styles.card}>
-        <h3>Analysis</h3>
-
-        {result.length === 0 ? (
-          <p style={{ color: "green" }}>No major issues</p>
-        ) : (
-          result.map((r, i) => (
-            <div key={i} style={styles.resultBox}>
-              <h4>{r.class}</h4>
-              <p style={{ color: getColor(r.confidence) }}>
-                {(r.confidence * 100).toFixed(1)}%
-              </p>
-              <p>{getSeverity(r.confidence)}</p>
-              <p style={{ color: "#2e7d32" }}>{r.suggestion}</p>
+          {loading ? (
+            <div style={styles.loaderContainer}>
+              <div style={styles.spinner}></div>
+              <p>Analyzing image...</p>
             </div>
-          ))
-        )}
-      </div>
-
-      {/* PDF */}
-      {pdf && (
-        <div style={styles.card}>
-          <a href={pdf} target="_blank" rel="noreferrer">
-            Download Report
-          </a>
+          ) : preview ? (
+            <img
+              src={`http://127.0.0.1:5000/uploads/${preview}`}
+              alt="result"
+              style={styles.image}
+            />
+          ) : (
+            <p style={styles.placeholder}>Upload an image to analyze</p>
+          )}
         </div>
-      )}
+
+        <div style={styles.card}>
+          <h3>Detected Issues</h3>
+
+          {result.length === 0 ? (
+            <p style={{ color: "#16a34a" }}>No major issues</p>
+          ) : (
+            result.map((r, i) => (
+              <div key={i} style={styles.resultItem}>
+                <span>{r.class}</span>
+                <span>{(r.confidence * 100).toFixed(1)}%</span>
+              </div>
+            ))
+          )}
+
+          <input
+            type="email"
+            placeholder="Enter email"
+            value={shareEmail}
+            onChange={(e) => setShareEmail(e.target.value)}
+            style={styles.input}
+          />
+
+          <div style={styles.buttonRow}>
+            <button style={styles.shareBtn} onClick={handleShare}>
+              Share Report
+            </button>
+
+            <a href={`http://127.0.0.1:5000/uploads/${pdf}`} download>
+              <button style={styles.downloadBtn}>Download</button>
+            </a>
+          </div>
+        </div>
+      </div>
 
       {/* History */}
       <div style={styles.card}>
-        <h3>Previous Reports</h3>
+        <h2>Previous Reports</h2>
 
-        {history.length === 0 ? (
-          <p>No history</p>
-        ) : (
-          history.map((h, i) => (
-            <div key={i} style={styles.historyCard}>
-              <p><b>Report {i + 1}</b></p>
-
-              <p
-                style={styles.link}
-                onClick={() =>
-                  setSelectedImage(
-                    `http://127.0.0.1:5000/uploads/det_${h.file}`
-                  )
-                }
-              >
-                View Image
-              </p>
-
-              <p style={{ color: "#d32f2f" }}>
-                {h.top_defect || "No Detection"}
-              </p>
+        {history.map((h, i) => (
+          <div key={i} style={styles.historyItem}>
+            <div>
+              <b>Report {i + 1}</b>
+              <p style={{ color: "#ef4444" }}>{h.top_defect}</p>
             </div>
-          ))
-        )}
+
+            <a
+              href={`http://127.0.0.1:5000/uploads/det_${h.file}`}
+              target="_blank"
+              rel="noreferrer"
+              style={styles.link}
+            >
+              View
+            </a>
+          </div>
+        ))}
       </div>
-
-      {/* Modal */}
-      {selectedImage && (
-        <div style={styles.modal} onClick={() => setSelectedImage(null)}>
-          <img src={selectedImage} style={styles.modalImg} />
-        </div>
-      )}
-
-      <button style={styles.logout} onClick={logout}>
-        Logout
-      </button>
     </div>
   );
 }
-
-const styles = {
-  container: {
-    textAlign: "center",
-    background: "#f4f6f8",
-    minHeight: "100vh",
-    padding: "20px",
-  },
-  card: {
-    background: "#fff",
-    padding: "20px",
-    margin: "20px auto",
-    maxWidth: "550px",
-    borderRadius: "12px",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-  },
-  image: {
-    width: "100%",
-    borderRadius: "10px",
-    marginTop: "10px",
-    cursor: "pointer",
-  },
-  modal: {
-    position: "fixed",
-    top: 0,
-    left: 0,
-    width: "100%",
-    height: "100%",
-    background: "rgba(0,0,0,0.8)",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalImg: {
-    maxWidth: "90%",
-    maxHeight: "90%",
-  },
-  primaryBtn: {
-    marginTop: "10px",
-    padding: "10px",
-    background: "#1976d2",
-    color: "#fff",
-    border: "none",
-    borderRadius: "6px",
-    width: "100%",
-  },
-  secondaryBtn: {
-    marginTop: "10px",
-    padding: "10px",
-    background: "#4caf50",
-    color: "#fff",
-    border: "none",
-    borderRadius: "6px",
-    width: "100%",
-  },
-  input: {
-    marginTop: "10px",
-    padding: "8px",
-    width: "100%",
-    borderRadius: "6px",
-    border: "1px solid #ccc",
-  },
-  summary: {
-    background: "#fff3e0",
-    padding: "15px",
-    margin: "20px auto",
-    maxWidth: "550px",
-    borderRadius: "10px",
-  },
-  resultBox: {
-    border: "1px solid #eee",
-    padding: "10px",
-    marginTop: "10px",
-    borderRadius: "8px",
-    textAlign: "left",
-  },
-  historyCard: {
-    border: "1px solid #eee",
-    padding: "10px",
-    marginTop: "10px",
-    borderRadius: "8px",
-    textAlign: "left",
-  },
-  link: {
-    color: "#1976d2",
-    cursor: "pointer",
-  },
-  logout: {
-    marginTop: "20px",
-    background: "#d32f2f",
-    color: "#fff",
-    padding: "10px",
-    border: "none",
-    borderRadius: "6px",
-  },
-};
 
 export default Dashboard;

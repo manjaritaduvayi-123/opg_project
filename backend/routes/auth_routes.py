@@ -98,26 +98,32 @@ def send_email(receiver_email, report_path):
 @auth_bp.route("/share", methods=["POST"])
 def share_report():
     data = request.json
-    print("Incoming data:", data)
+    print("🔥 Incoming data:", data)
 
     if not data:
         return jsonify({"error": "No data provided"}), 400
 
     email = data.get("email", "").strip()
+    image_path = data.get("image_path")
 
     if not email:
         return jsonify({"error": "Email is required"}), 400
 
+    if not image_path:
+        return jsonify({"error": "Image path missing"}), 400
+
     try:
-        # 🔥 Use already generated image (DO NOT run prediction again)
-        image_path = data.get("image_path")
+        # ✅ FIX: convert to absolute path
+        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+        full_path = os.path.join(BASE_DIR, "..", image_path)
+        full_path = os.path.abspath(full_path)
 
-        if not image_path:
-            return jsonify({"error": "Image path missing"}), 400
+        print("📂 Full path:", full_path)
 
-        print("📸 Sending file:", image_path)
+        if not os.path.exists(full_path):
+            return jsonify({"error": f"File not found: {full_path}"}), 400
 
-        send_email(email, image_path)
+        send_email(email, full_path)
 
         return jsonify({"msg": "Report sent successfully"})
 
