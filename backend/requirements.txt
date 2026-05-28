@@ -6,3 +6,5 @@ werkzeug
 reportlab
 pymongo
 bcrypt
+tensorflow
+gunicorn
