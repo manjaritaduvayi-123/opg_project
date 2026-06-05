@@ -193,7 +193,31 @@ def upload_file():
         # ------------------------------------------------
         # 🔥 KEEP ALL DETECTIONS
         # ------------------------------------------------
-        output = raw_output
+                # ------------------------------------------------
+        # 🔥 REMOVE DUPLICATE CLASSES
+        # Keep only highest confidence detection
+        # ------------------------------------------------
+
+        unique_classes = {}
+
+        for det in raw_output:
+
+            cls = det["class"]
+
+            if cls not in unique_classes:
+
+                unique_classes[cls] = det
+
+            elif (
+                det["confidence"]
+                > unique_classes[cls]["confidence"]
+            ):
+
+                unique_classes[cls] = det
+
+        output = list(
+            unique_classes.values()
+        )
 
         # 🔥 SORT BY CONFIDENCE
         output = sorted(
@@ -201,7 +225,6 @@ def upload_file():
             key=lambda x: x["confidence"],
             reverse=True
         )
-
         # 🔥 TOP DEFECT
         top_defect = (
             output[0]["class"]
@@ -335,20 +358,17 @@ def share_report():
 
     try:
 
-        data = request.json
+        data = request.get_json()
 
         email = data.get("email")
-
         file_name = data.get("file")
 
         if not email:
-
             return jsonify({
-                "error": "Email is required"
+                "error": "Email required"
             }), 400
 
         if not file_name:
-
             return jsonify({
                 "error": "File missing"
             }), 400
@@ -365,15 +385,14 @@ def share_report():
         )
 
         if not os.path.exists(pdf_path):
-
             return jsonify({
-                "error": "PDF not found"
-            }), 400
+                "error": f"PDF not found: {pdf_path}"
+            }), 404
 
         send_email(
             to_email=email,
-            subject="Dental Report",
-            body="Your dental report is attached.",
+            subject="Dental AI Report",
+            body="Your dental analysis report is attached.",
             attachment_path=pdf_path
         )
 
@@ -386,8 +405,6 @@ def share_report():
         return jsonify({
             "error": str(e)
         }), 500
-
-
 # ------------------------------------------------
 # 📜 HISTORY
 # ------------------------------------------------

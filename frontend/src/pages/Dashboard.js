@@ -93,62 +93,45 @@ function Dashboard() {
   // 🔥 SHARE REPORT
   const handleShare = async () => {
 
-    if (!preview) {
+  if (!shareEmail) {
+    alert("Enter email");
+    return;
+  }
 
-      alert("No image to share");
+  if (!preview) {
+    alert("No report available");
+    return;
+  }
 
-      return;
-    }
+  try {
 
-    if (!shareEmail) {
+    setSharing(true);
 
-      alert("Enter email");
-
-      return;
-    }
-
-    try {
-
-      setSharing(true);
-
-      const res = await fetch(
-        "http://localhost:5000/share",
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type": "application/json"
-          },
-
-          body: JSON.stringify({
-            email: shareEmail,
-            file: preview.replace("det_", "")
-          })
-        }
-      );
-
-      const data = await res.json();
-
-      if (!res.ok) {
-
-        alert(data.error);
-
-        return;
+    const response = await axios.post(
+      "http://127.0.0.1:5000/share",
+      {
+        email: shareEmail,
+        file: preview.replace("det_", "")
       }
+    );
 
-      alert("✅ Report shared successfully");
+    alert(response.data.msg);
 
-    } catch (err) {
+  } catch (err) {
 
-      console.error(err);
+    console.error(err);
 
-      alert("Network error");
+    alert(
+      err.response?.data?.error ||
+      "Email sending failed"
+    );
 
-    } finally {
+  } finally {
 
-      setSharing(false);
-    }
-  };
+    setSharing(false);
+
+  }
+};
 
   // 🔥 STYLES
   const styles = {
