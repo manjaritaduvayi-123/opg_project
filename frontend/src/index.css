@@ -1,13 +1,124 @@
-body {
+/* RESET */
+* {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+/* BODY */
+body {
+  font-family: "Segoe UI", sans-serif;
+  background: #f8fafc;
+  color: #111827;
+  transition: all 0.3s ease;
+}
+
+/* DARK MODE */
+body.dark {
+  background: #0f172a;
+  color: #e5e7eb;
+}
+
+/* CARD STYLE */
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+body.dark .card {
+  background: #1e293b;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* BUTTONS */
+button {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+  opacity: 0.9;
+}
+
+/* INPUT */
+input {
+  outline: none;
+  font-size: 14px;
+}
+
+body.dark input {
+  background: #334155;
+  color: white;
+  border: 1px solid #475569;
+}
+
+/* LINKS */
+a {
+  text-decoration: none;
+}
+
+/* IMAGE */
+img {
+  max-width: 100%;
+  display: block;
+}
+
+/* ========================= */
+/* 🔥 LOADER SPINNER */
+/* ========================= */
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.spinner {
+  width: 45px;
+  height: 45px;
+  border: 4px solid #e5e7eb;
+  border-top: 4px solid #2563eb;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* ========================= */
+/* ✨ ANIMATED BACKGROUND */
+/* ========================= */
+
+@keyframes gradientMove {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animated-bg {
+  background: linear-gradient(-45deg, #2563eb, #9333ea, #06b6d4, #22c55e);
+  background-size: 300% 300%;
+  animation: gradientMove 12s ease infinite;
+}
+
+/* DARK MODE BG */
+body.dark .animated-bg {
+  background: linear-gradient(-45deg, #0f172a, #1e293b, #020617, #334155);
+}
+
+/* ========================= */
+/* SCROLLBAR (OPTIONAL NICE TOUCH) */
+/* ========================= */
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5f5;
+  border-radius: 10px;
+}
+
+body.dark ::-webkit-scrollbar-thumb {
+  background: #475569;
 }

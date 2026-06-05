@@ -7,25 +7,25 @@ from utils.email_utils import send_email
 from db import reports
 import time
 import cv2
+import numpy as np
 
 upload_bp = Blueprint('upload', __name__)
 
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-<<<<<<< HEAD
-=======
 # 🔥 MODEL
->>>>>>> 24ab891 (Updated dashboard UI, added loader, fixed email sharing)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_PATH = os.path.join(BASE_DIR, "..", "best.pt")
+
+MODEL_PATH = os.path.join(
+    BASE_DIR,
+    "..",
+    "best.pt"
+)
+
 model = YOLO(MODEL_PATH)
 
-<<<<<<< HEAD
-
-=======
 # 🔥 CLASSES
->>>>>>> 24ab891 (Updated dashboard UI, added loader, fixed email sharing)
 CLASS_NAMES = [
     "Caries",
     "Crown",
@@ -34,11 +34,7 @@ CLASS_NAMES = [
     "Impacted_tooth"
 ]
 
-<<<<<<< HEAD
-
-=======
 # 🔥 SUGGESTIONS
->>>>>>> 24ab891 (Updated dashboard UI, added loader, fixed email sharing)
 SUGGESTIONS = {
     "Caries": "Tooth decay detected. Filling or root canal may be required.",
     "Crown": "Crown is present. Regular dental checkup recommended.",
@@ -48,50 +44,129 @@ SUGGESTIONS = {
 }
 
 
-<<<<<<< HEAD
+# ------------------------------------------------
+# 🔥 IMPROVED AI HEATMAP
+# ------------------------------------------------
+def create_heatmap(image_path, detections):
 
-=======
-# -------------------------------
+    image = cv2.imread(image_path)
+
+    h, w = image.shape[:2]
+
+    heatmap = np.zeros((h, w), dtype=np.float32)
+
+    for det in detections:
+
+        x1, y1, x2, y2 = map(int, det["bbox"])
+
+        conf = det["confidence"]
+
+        # 🔥 CENTER
+        center_x = (x1 + x2) // 2
+        center_y = (y1 + y2) // 2
+
+        # 🔥 RADIUS
+        radius = max(
+            (x2 - x1),
+            (y2 - y1)
+        ) // 2
+
+        # 🔥 TEMP OVERLAY
+        overlay = np.zeros((h, w), dtype=np.float32)
+
+        # 🔥 DRAW GLOW
+        cv2.circle(
+            overlay,
+            (center_x, center_y),
+            radius,
+            conf * 255,
+            -1
+        )
+
+        # 🔥 BLUR
+        overlay = cv2.GaussianBlur(
+            overlay,
+            (151, 151),
+            0
+        )
+
+        heatmap += overlay
+
+    # 🔥 NORMALIZE
+    heatmap = np.clip(
+        heatmap,
+        0,
+        255
+    ).astype(np.uint8)
+
+    # 🔥 APPLY COLOR
+    heatmap_color = cv2.applyColorMap(
+        heatmap,
+        cv2.COLORMAP_TURBO
+    )
+
+    # 🔥 BLEND
+    overlay_image = cv2.addWeighted(
+        image,
+        0.7,
+        heatmap_color,
+        0.5,
+        0
+    )
+
+    return overlay_image
+
+
+# ------------------------------------------------
 # 🔍 UPLOAD + ANALYZE
-# -------------------------------
->>>>>>> 24ab891 (Updated dashboard UI, added loader, fixed email sharing)
+# ------------------------------------------------
 @upload_bp.route("/upload", methods=["POST"])
 def upload_file():
+
     try:
+
         if 'file' not in request.files:
-            return jsonify({"error": "No file received"}), 400
+
+            return jsonify({
+                "error": "No file received"
+            }), 400
 
         file = request.files['file']
+
         email = request.form.get("email")
 
-<<<<<<< HEAD
-        
-=======
-        # 📁 Save original
->>>>>>> 24ab891 (Updated dashboard UI, added loader, fixed email sharing)
-        filename = f"{int(time.time())}_{secure_filename(file.filename)}"
-        filepath = os.path.join(UPLOAD_FOLDER, filename)
+        # 🔥 SAVE ORIGINAL IMAGE
+        filename = (
+            f"{int(time.time())}_"
+            f"{secure_filename(file.filename)}"
+        )
+
+        filepath = os.path.join(
+            UPLOAD_FOLDER,
+            filename
+        )
+
         file.save(filepath)
 
-<<<<<<< HEAD
-        
-=======
+        # ------------------------------------------------
         # 🔥 YOLO PREDICTION
->>>>>>> 24ab891 (Updated dashboard UI, added loader, fixed email sharing)
+        # ------------------------------------------------
         results = model.predict(
             source=filepath,
-            conf=0.5,
-            iou=0.5,
+            conf=0.25,
+            iou=0.3,
             save=False
         )
 
         raw_output = []
 
         for r in results:
+
             if r.boxes is None:
                 continue
 
             for box in r.boxes:
+
                 cls_id = int(box.cls)
 
                 if cls_id >= len(CLASS_NAMES):
@@ -100,131 +175,201 @@ def upload_file():
                 class_name = CLASS_NAMES[cls_id]
 
                 raw_output.append({
+
                     "class": class_name,
+
                     "confidence": float(box.conf),
-                    "bbox": list(map(float, box.xyxy[0])),
-                    "suggestion": SUGGESTIONS.get(class_name, "Consult a dentist")
+
+                    "bbox": list(
+                        map(float, box.xyxy[0])
+                    ),
+
+                    "suggestion": SUGGESTIONS.get(
+                        class_name,
+                        "Consult dentist"
+                    )
                 })
 
-<<<<<<< HEAD
-        
-=======
-        # 🔥 REMOVE DUPLICATES
->>>>>>> 24ab891 (Updated dashboard UI, added loader, fixed email sharing)
-        unique_results = {}
-        for item in raw_output:
-            cls = item["class"]
-            if cls not in unique_results or item["confidence"] > unique_results[cls]["confidence"]:
-                unique_results[cls] = item
+        # ------------------------------------------------
+        # 🔥 KEEP ALL DETECTIONS
+        # ------------------------------------------------
+        output = raw_output
 
-        output = list(unique_results.values())
-        output = sorted(output, key=lambda x: x["confidence"], reverse=True)
+        # 🔥 SORT BY CONFIDENCE
+        output = sorted(
+            output,
+            key=lambda x: x["confidence"],
+            reverse=True
+        )
 
-<<<<<<< HEAD
-        
-        top_defect = output[0]["class"] if output else "No Detection"
-
-        
-=======
         # 🔥 TOP DEFECT
-        top_defect = output[0]["class"] if output else "No Detection"
+        top_defect = (
+            output[0]["class"]
+            if output
+            else "No Detection"
+        )
 
-        # 💾 SAVE TO DB
->>>>>>> 24ab891 (Updated dashboard UI, added loader, fixed email sharing)
+        # ------------------------------------------------
+        # 💾 SAVE DATABASE
+        # ------------------------------------------------
         reports.insert_one({
+
             "email": email,
+
             "file": filename,
+
             "result": output,
+
             "top_defect": top_defect
         })
 
-<<<<<<< HEAD
-        
-=======
+        # ------------------------------------------------
         # 📄 GENERATE PDF
->>>>>>> 24ab891 (Updated dashboard UI, added loader, fixed email sharing)
-        pdf_name = f"{filename.split('.')[0]}_report.pdf"
-        pdf_path = os.path.join(UPLOAD_FOLDER, pdf_name)
-        generate_pdf(output, filepath, pdf_path)
+        # ------------------------------------------------
+        pdf_name = (
+            f"{filename.split('.')[0]}"
+            f"_report.pdf"
+        )
 
-<<<<<<< HEAD
-        
-=======
-        # 🔥 CREATE YOLO OUTPUT IMAGE
->>>>>>> 24ab891 (Updated dashboard UI, added loader, fixed email sharing)
-        clean_name = f"det_{filename}"
-        clean_path = os.path.join(UPLOAD_FOLDER, clean_name)
+        pdf_path = os.path.join(
+            UPLOAD_FOLDER,
+            pdf_name
+        )
+
+        generate_pdf(
+            output,
+            filepath,
+            pdf_path
+        )
+
+        # ------------------------------------------------
+        # 🔥 DETECTION IMAGE
+        # ------------------------------------------------
+        detected_name = f"det_{filename}"
+
+        detected_path = os.path.join(
+            UPLOAD_FOLDER,
+            detected_name
+        )
 
         for r in results:
-            plotted = r.plot(labels=True, conf=False)
-            cv2.imwrite(clean_path, plotted)
 
-<<<<<<< HEAD
-=======
-        print("✅ Saved YOLO image:", clean_path)
+            plotted = r.plot(
+                labels=True,
+                conf=True
+            )
 
-        # ✅ FINAL RESPONSE (FIXED)
->>>>>>> 24ab891 (Updated dashboard UI, added loader, fixed email sharing)
+            cv2.imwrite(
+                detected_path,
+                plotted
+            )
+
+        # ------------------------------------------------
+        # 🔥 HEATMAP IMAGE
+        # ------------------------------------------------
+        heatmap_name = f"heatmap_{filename}"
+
+        heatmap_path = os.path.join(
+            UPLOAD_FOLDER,
+            heatmap_name
+        )
+
+        heatmap_image = create_heatmap(
+            filepath,
+            output
+        )
+
+        cv2.imwrite(
+            heatmap_path,
+            heatmap_image
+        )
+
+        print("🔥 Heatmap saved")
+
+        # ------------------------------------------------
+        # 🔥 RESPONSE
+        # ------------------------------------------------
         return jsonify({
+
             "message": "Analysis complete",
+
             "file": filename,
-            "image": clean_name,   # 🔥 FIXED (no uploads/)
+
+            "image": detected_name,
+
+            "heatmap": heatmap_name,
+
             "pdf": pdf_name,
+
             "predictions": output,
+
             "top_defect": top_defect
         })
 
     except Exception as e:
+
         print("❌ Upload Error:", str(e))
-        return jsonify({"error": str(e)}), 500
+
+        return jsonify({
+            "error": str(e)
+        }), 500
 
 
-<<<<<<< HEAD
-
-=======
-# -------------------------------
-# 📂 SERVE IMAGES
-# -------------------------------
->>>>>>> 24ab891 (Updated dashboard UI, added loader, fixed email sharing)
+# ------------------------------------------------
+# 📂 SERVE FILES
+# ------------------------------------------------
 @upload_bp.route('/uploads/<path:filename>')
 def serve_upload(filename):
-    return send_from_directory(UPLOAD_FOLDER, filename)
+
+    return send_from_directory(
+        UPLOAD_FOLDER,
+        filename
+    )
 
 
-<<<<<<< HEAD
-
-=======
-# -------------------------------
+# ------------------------------------------------
 # 📧 SHARE REPORT
-# -------------------------------
->>>>>>> 24ab891 (Updated dashboard UI, added loader, fixed email sharing)
+# ------------------------------------------------
 @upload_bp.route("/share", methods=["POST"])
 def share_report():
+
     try:
+
         data = request.json
-        print("🔥 Incoming data:", data)  # DEBUG
 
         email = data.get("email")
+
         file_name = data.get("file")
 
-        # ✅ VALIDATIONS
         if not email:
-            return jsonify({"error": "Email is required"}), 400
+
+            return jsonify({
+                "error": "Email is required"
+            }), 400
 
         if not file_name:
-            return jsonify({"error": "File name missing"}), 400
 
-        # ✅ BUILD PDF NAME
-        base_name = os.path.splitext(file_name)[0]   # 🔥 safer than split
+            return jsonify({
+                "error": "File missing"
+            }), 400
+
+        base_name = os.path.splitext(
+            file_name
+        )[0]
+
         pdf_name = f"{base_name}_report.pdf"
-        pdf_path = os.path.join(UPLOAD_FOLDER, pdf_name)
 
-        print("📄 PDF path:", pdf_path)
+        pdf_path = os.path.join(
+            UPLOAD_FOLDER,
+            pdf_name
+        )
 
         if not os.path.exists(pdf_path):
-            return jsonify({"error": f"Report not found: {pdf_name}"}), 400
 
-        # ✅ SEND EMAIL
+            return jsonify({
+                "error": "PDF not found"
+            }), 400
+
         send_email(
             to_email=email,
             subject="Dental Report",
@@ -232,26 +377,36 @@ def share_report():
             attachment_path=pdf_path
         )
 
-        print("📧 Email sent to:", email)
-
-        return jsonify({"msg": "Email sent successfully"})
+        return jsonify({
+            "msg": "Email sent successfully"
+        })
 
     except Exception as e:
-        print("❌ Share Error:", str(e))
-        return jsonify({"error": str(e)}), 500
 
-<<<<<<< HEAD
+        return jsonify({
+            "error": str(e)
+        }), 500
 
 
-=======
-# -------------------------------
+# ------------------------------------------------
 # 📜 HISTORY
-# -------------------------------
->>>>>>> 24ab891 (Updated dashboard UI, added loader, fixed email sharing)
+# ------------------------------------------------
 @upload_bp.route("/history/<email>", methods=["GET"])
 def history(email):
+
     try:
-        data = list(reports.find({"email": email}, {"_id": 0}))
+
+        data = list(
+            reports.find(
+                {"email": email},
+                {"_id": 0}
+            )
+        )
+
         return jsonify(data)
+
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+
+        return jsonify({
+            "error": str(e)
+        }), 500

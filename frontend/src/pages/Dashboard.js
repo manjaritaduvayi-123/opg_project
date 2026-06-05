@@ -2,35 +2,68 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 
 function Dashboard() {
+
   const [file, setFile] = useState(null);
+
   const [preview, setPreview] = useState(null);
+
+  const [heatmap, setHeatmap] = useState(null);
+
   const [result, setResult] = useState([]);
+
   const [history, setHistory] = useState([]);
+
   const [shareEmail, setShareEmail] = useState("");
+
   const [pdf, setPdf] = useState("");
-  const [loading, setLoading] = useState(false); // 🔥 NEW
+
+  const [loading, setLoading] = useState(false);
+
+  const [sharing, setSharing] = useState(false);
+
+  const [darkMode, setDarkMode] = useState(false);
 
   const email = localStorage.getItem("email");
 
+  // 🔥 LOAD HISTORY
   useEffect(() => {
+
     if (!email) return;
 
     axios
       .get(`http://127.0.0.1:5000/history/${email}`)
-      .then((res) => setHistory(res.data))
-      .catch(() => console.log("No history"));
+      .then((res) => {
+
+        setHistory(res.data);
+
+      })
+      .catch(() => {
+
+        console.log("No history");
+
+      });
+
   }, [email]);
 
-  // 🔥 UPLOAD WITH LOADER
+  // 🔥 UPLOAD
   const handleUpload = async () => {
-    if (!file) return alert("Select file first");
+
+    if (!file) {
+
+      alert("Select image first");
+
+      return;
+    }
 
     const formData = new FormData();
+
     formData.append("file", file);
+
     formData.append("email", email);
 
     try {
-      setLoading(true); // 🔥 START
+
+      setLoading(true);
 
       const res = await axios.post(
         "http://127.0.0.1:5000/upload",
@@ -38,195 +71,306 @@ function Dashboard() {
       );
 
       setPreview(res.data.image);
+
+      setHeatmap(res.data.heatmap);
+
       setResult(res.data.predictions || []);
+
       setPdf(res.data.pdf);
 
     } catch (err) {
+
       console.error(err);
+
       alert("Upload failed");
+
     } finally {
-      setLoading(false); // 🔥 STOP
+
+      setLoading(false);
     }
   };
 
-  // 📧 SHARE
+  // 🔥 SHARE REPORT
   const handleShare = async () => {
-    if (!preview) return alert("No image to share");
-    if (!shareEmail) return alert("Enter email first");
+
+    if (!preview) {
+
+      alert("No image to share");
+
+      return;
+    }
+
+    if (!shareEmail) {
+
+      alert("Enter email");
+
+      return;
+    }
 
     try {
-      const res = await fetch("http://localhost:5000/share", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          email: shareEmail,
-          file: preview.replace("det_", "")
-        })
-      });
+
+      setSharing(true);
+
+      const res = await fetch(
+        "http://localhost:5000/share",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json"
+          },
+
+          body: JSON.stringify({
+            email: shareEmail,
+            file: preview.replace("det_", "")
+          })
+        }
+      );
 
       const data = await res.json();
 
-      if (!res.ok) return alert(data.error);
+      if (!res.ok) {
+
+        alert(data.error);
+
+        return;
+      }
 
       alert("✅ Report shared successfully");
+
     } catch (err) {
+
       console.error(err);
+
       alert("Network error");
+
+    } finally {
+
+      setSharing(false);
     }
   };
 
+  // 🔥 STYLES
   const styles = {
+
     container: {
       padding: "30px",
-      background: "#f8fafc",
       minHeight: "100vh",
       fontFamily: "Segoe UI, sans-serif",
+      background: darkMode
+        ? "linear-gradient(135deg,#0f172a,#111827,#1e293b)"
+        : "linear-gradient(135deg,#dbeafe,#eff6ff,#f8fafc)",
+      color: darkMode ? "white" : "black"
     },
-    title: { marginBottom: "20px", fontWeight: "600" },
+
+    header: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: "20px"
+    },
+
     card: {
-      background: "white",
+      background: darkMode ? "#1e293b" : "white",
       padding: "20px",
-      borderRadius: "12px",
-      boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
-      marginBottom: "20px",
+      borderRadius: "16px",
+      boxShadow: "0 6px 18px rgba(0,0,0,0.1)",
+      marginBottom: "20px"
     },
+
     grid: {
       display: "grid",
       gridTemplateColumns: "1fr 1fr",
-      gap: "20px",
-    },
-    image: { width: "100%", borderRadius: "10px" },
-    placeholder: { color: "#6b7280" },
-
-    loaderContainer: {
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      height: "200px",
+      gap: "20px"
     },
 
-    spinner: {
-      width: "40px",
-      height: "40px",
-      border: "4px solid #e5e7eb",
-      borderTop: "4px solid #2563eb",
-      borderRadius: "50%",
-      animation: "spin 1s linear infinite",
+    image: {
+      width: "100%",
+      borderRadius: "12px",
+      marginTop: "10px"
     },
 
-    resultItem: {
-      display: "flex",
-      justifyContent: "space-between",
-      background: "#f1f5f9",
-      padding: "10px",
-      borderRadius: "6px",
-      marginTop: "8px",
-    },
     input: {
       width: "100%",
-      padding: "10px",
-      marginTop: "10px",
-      borderRadius: "6px",
+      padding: "12px",
+      borderRadius: "8px",
       border: "1px solid #ccc",
+      marginTop: "15px"
     },
+
     buttonRow: {
       display: "flex",
       gap: "10px",
-      marginTop: "10px",
+      marginTop: "15px"
     },
-    primaryBtn: {
-      marginLeft: "10px",
-      background: "#2563eb",
-      color: "white",
-      padding: "10px 16px",
+
+    btn: {
+      padding: "10px 18px",
       border: "none",
-      borderRadius: "6px",
+      borderRadius: "8px",
       cursor: "pointer",
-    },
-    shareBtn: {
-      background: "#16a34a",
       color: "white",
-      padding: "10px",
-      border: "none",
-      borderRadius: "6px",
-      cursor: "pointer",
+      fontWeight: "bold"
     },
-    downloadBtn: {
-      background: "#2563eb",
-      color: "white",
-      padding: "10px",
-      border: "none",
-      borderRadius: "6px",
-      cursor: "pointer",
+
+    primary: {
+      background: "#2563eb"
     },
+
+    green: {
+      background: "#16a34a"
+    },
+
     historyItem: {
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
-      background: "#f3f4f6",
-      padding: "12px",
-      borderRadius: "6px",
-      marginTop: "10px",
+      background: darkMode ? "#334155" : "#f1f5f9",
+      padding: "15px",
+      borderRadius: "10px",
+      marginTop: "12px"
     },
+
     link: {
+      border: "none",
+      background: "none",
       color: "#2563eb",
-      textDecoration: "none",
+      cursor: "pointer",
       fontWeight: "bold",
+      fontSize: "16px"
     },
+
+    resultCard: {
+      padding: "12px",
+      borderRadius: "10px",
+      marginBottom: "15px",
+      background: darkMode ? "#334155" : "#f8fafc"
+    }
   };
 
   return (
-    <div style={styles.container}>
-      <h1 style={styles.title}>🦷 Dental AI Dashboard</h1>
 
-      {/* Upload */}
-      <div style={styles.card}>
-        <input type="file" onChange={(e) => setFile(e.target.files[0])} />
+    <div style={styles.container}>
+
+      {/* HEADER */}
+      <div style={styles.header}>
+
+        <h1>🦷 Dental AI Dashboard</h1>
+
         <button
-          style={styles.primaryBtn}
+          onClick={() => setDarkMode(!darkMode)}
+          style={{
+            padding: "10px",
+            borderRadius: "8px",
+            cursor: "pointer"
+          }}
+        >
+          {darkMode ? "☀️ Light" : "🌙 Dark"}
+        </button>
+
+      </div>
+
+      {/* UPLOAD */}
+      <div style={styles.card}>
+
+        <input
+          type="file"
+          onChange={(e) => setFile(e.target.files[0])}
+        />
+
+        <button
           onClick={handleUpload}
           disabled={loading}
+          style={{
+            ...styles.btn,
+            ...styles.primary,
+            marginLeft: "10px"
+          }}
         >
           {loading ? "Analyzing..." : "Analyze"}
         </button>
+
+        {loading && (
+          <p style={{ marginTop: "10px" }}>
+            🔄 AI analyzing dental X-ray...
+          </p>
+        )}
+
       </div>
 
-      {/* Main */}
+      {/* MAIN */}
       <div style={styles.grid}>
+
+        {/* LEFT */}
         <div style={styles.card}>
-          {loading ? (
-            <div style={styles.loaderContainer}>
-              <div style={styles.spinner}></div>
-              <p>Analyzing image...</p>
-            </div>
-          ) : preview ? (
-            <img
-              src={`http://127.0.0.1:5000/uploads/${preview}`}
-              alt="result"
-              style={styles.image}
-            />
+
+          {preview ? (
+            <>
+
+              <h2>Detection Result</h2>
+
+              <img
+                src={`http://127.0.0.1:5000/uploads/${preview}`}
+                alt="Detection"
+                style={styles.image}
+              />
+
+              {heatmap && (
+                <>
+                  <h2 style={{ marginTop: "25px" }}>
+                    AI Attention Heatmap
+                  </h2>
+
+                  <img
+                    src={`http://127.0.0.1:5000/uploads/${heatmap}`}
+                    alt="Heatmap"
+                    style={styles.image}
+                  />
+                </>
+              )}
+
+            </>
           ) : (
-            <p style={styles.placeholder}>Upload an image to analyze</p>
+
+            <p>Upload an X-ray image</p>
+
           )}
+
         </div>
 
+        {/* RIGHT */}
         <div style={styles.card}>
-          <h3>Detected Issues</h3>
+
+          <h2>Detected Issues</h2>
 
           {result.length === 0 ? (
-            <p style={{ color: "#16a34a" }}>No major issues</p>
+
+            <p>No predictions yet</p>
+
           ) : (
+
             result.map((r, i) => (
-              <div key={i} style={styles.resultItem}>
-                <span>{r.class}</span>
-                <span>{(r.confidence * 100).toFixed(1)}%</span>
+
+              <div
+                key={i}
+                style={styles.resultCard}
+              >
+
+                <h3>{r.class}</h3>
+
+                <p>
+                  Confidence:
+                  {" "}
+                  {(r.confidence * 100).toFixed(1)}%
+                </p>
+
+                <p>{r.suggestion}</p>
+
               </div>
             ))
           )}
 
+          {/* EMAIL */}
           <input
             type="email"
             placeholder="Enter email"
@@ -235,40 +379,98 @@ function Dashboard() {
             style={styles.input}
           />
 
+          {/* BUTTONS */}
           <div style={styles.buttonRow}>
-            <button style={styles.shareBtn} onClick={handleShare}>
-              Share Report
+
+            <button
+              onClick={handleShare}
+              disabled={sharing}
+              style={{
+                ...styles.btn,
+                ...styles.green
+              }}
+            >
+              {sharing ? "Sharing..." : "Share"}
             </button>
 
-            <a href={`http://127.0.0.1:5000/uploads/${pdf}`} download>
-              <button style={styles.downloadBtn}>Download</button>
-            </a>
+            {pdf && (
+
+              <a
+                href={`http://127.0.0.1:5000/uploads/${pdf}`}
+                download
+              >
+                <button
+                  style={{
+                    ...styles.btn,
+                    ...styles.primary
+                  }}
+                >
+                  Download PDF
+                </button>
+              </a>
+
+            )}
+
           </div>
+
         </div>
+
       </div>
 
-      {/* History */}
+      {/* HISTORY */}
       <div style={styles.card}>
+
         <h2>Previous Reports</h2>
 
-        {history.map((h, i) => (
-          <div key={i} style={styles.historyItem}>
-            <div>
-              <b>Report {i + 1}</b>
-              <p style={{ color: "#ef4444" }}>{h.top_defect}</p>
-            </div>
+        {history.length === 0 ? (
 
-            <a
-              href={`http://127.0.0.1:5000/uploads/det_${h.file}`}
-              target="_blank"
-              rel="noreferrer"
-              style={styles.link}
+          <p>No reports found</p>
+
+        ) : (
+
+          history.map((h, i) => (
+
+            <div
+              key={i}
+              style={styles.historyItem}
             >
-              View
-            </a>
-          </div>
-        ))}
+
+              <div>
+
+                <h3>Report {i + 1}</h3>
+
+                <p style={{ color: "#ef4444" }}>
+                  {h.top_defect}
+                </p>
+
+              </div>
+
+              <button
+                style={styles.link}
+                onClick={() => {
+
+                  if (!h.file) {
+
+                    alert("No file found");
+
+                    return;
+                  }
+
+                  const url =
+                    `http://127.0.0.1:5000/uploads/det_${h.file}`;
+
+                  window.open(url, "_blank");
+                }}
+              >
+                View
+              </button>
+
+            </div>
+          ))
+        )}
+
       </div>
+
     </div>
   );
 }
