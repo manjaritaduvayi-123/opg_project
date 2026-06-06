@@ -2,7 +2,6 @@ flask
 flask-cors
 flask-mail
 gunicorn
-tensorflow
 numpy
 pillow
 opencv-python
