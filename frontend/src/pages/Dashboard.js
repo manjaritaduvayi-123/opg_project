@@ -275,7 +275,7 @@ function Dashboard() {
 
         {loading && (
           <p style={{ marginTop: "10px" }}>
-            🔄 AI analyzing dental X-ray...
+            🔄 Analyzing dental X-ray...
           </p>
         )}
 
@@ -301,7 +301,7 @@ function Dashboard() {
               {heatmap && (
                 <>
                   <h2 style={{ marginTop: "25px" }}>
-                    AI Attention Heatmap
+                    Diagnostic Heatmap Analysis
                   </h2>
 
                   <img

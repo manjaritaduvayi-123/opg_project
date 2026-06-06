@@ -59,63 +59,65 @@ def create_heatmap(image_path, detections):
 
         x1, y1, x2, y2 = map(int, det["bbox"])
 
-        conf = det["confidence"]
+        conf = float(det["confidence"])
 
-        # 🔥 CENTER
+        overlay = np.zeros((h, w), dtype=np.float32)
+
+        # Center of detection
         center_x = (x1 + x2) // 2
         center_y = (y1 + y2) // 2
 
-        # 🔥 RADIUS
-        radius = max(
-            (x2 - x1),
-            (y2 - y1)
-        ) // 2
+        # Detection size
+        axes = (
+            max((x2 - x1) // 2, 10),
+            max((y2 - y1) // 2, 10)
+        )
 
-        # 🔥 TEMP OVERLAY
-        overlay = np.zeros((h, w), dtype=np.float32)
-
-        # 🔥 DRAW GLOW
-        cv2.circle(
+        # Draw ellipse instead of full rectangle
+        cv2.ellipse(
             overlay,
             (center_x, center_y),
-            radius,
+            axes,
+            0,
+            0,
+            360,
             conf * 255,
             -1
         )
 
-        # 🔥 BLUR
+        # Smaller blur for sharper hotspots
         overlay = cv2.GaussianBlur(
             overlay,
-            (151, 151),
+            (41, 41),
             0
         )
 
         heatmap += overlay
 
-    # 🔥 NORMALIZE
-    heatmap = np.clip(
+    heatmap = cv2.normalize(
         heatmap,
+        None,
         0,
-        255
-    ).astype(np.uint8)
-
-    # 🔥 APPLY COLOR
-    heatmap_color = cv2.applyColorMap(
-        heatmap,
-        cv2.COLORMAP_TURBO
+        255,
+        cv2.NORM_MINMAX
     )
 
-    # 🔥 BLEND
-    overlay_image = cv2.addWeighted(
+    heatmap = heatmap.astype(np.uint8)
+
+    heatmap_color = cv2.applyColorMap(
+        heatmap,
+        cv2.COLORMAP_JET
+    )
+
+    result = cv2.addWeighted(
         image,
-        0.7,
+        0.8,
         heatmap_color,
-        0.5,
+        0.2,
         0
     )
 
-    return overlay_image
-
+    return result
 
 # ------------------------------------------------
 # 🔍 UPLOAD + ANALYZE
@@ -299,7 +301,7 @@ def upload_file():
 
         heatmap_image = create_heatmap(
             filepath,
-            output
+            raw_output
         )
 
         cv2.imwrite(
