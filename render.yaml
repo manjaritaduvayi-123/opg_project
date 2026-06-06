@@ -11,12 +11,13 @@ services:
         value: 3.10.0
 
   # 2. Your Static Frontend
+  # 2. Your Static Frontend
   - type: web
     name: opg-frontend
     runtime: static
     rootDir: frontend
     buildCommand: npm install && npm run build
-    publishDir: build # Change to 'dist' if you are using Vite instead of Create React App
+    staticPublishDir: build # <--- FIXED THIS LINE
     envVars:
       - key: REACT_APP_API_URL
-        value: https://opg-backend.onrender.com # Replace with your backend's eventual URL
+        value: https://opg-backend.onrender.com
