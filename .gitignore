@@ -13,3 +13,10 @@ backend/*.pdf
  count.py
  opg_labels/
  opg_labels/
+ .env
+backend/.env
+
+__pycache__/
+*.pyc
+
+opg_labels/
