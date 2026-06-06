@@ -1,0 +1,22 @@
+services:
+  # 1. Your Python Backend
+  - type: web
+    name: opg-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app # Change to 'gunicorn app:app -k uvicorn.workers.UvicornWorker' if using FastAPI
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.0
+
+  # 2. Your Static Frontend
+  - type: web
+    name: opg-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    publishDir: build # Change to 'dist' if you are using Vite instead of Create React App
+    envVars:
+      - key: REACT_APP_API_URL
+        value: https://opg-backend.onrender.com # Replace with your backend's eventual URL
