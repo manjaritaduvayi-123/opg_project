@@ -11,18 +11,13 @@ import numpy as np
 
 upload_bp = Blueprint('upload', __name__)
 
-UPLOAD_FOLDER = "uploads"
+# 🔥 SETUP DYNAMIC ABSOLUTE PATHS FOR UPLOADS
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# 🔥 MODEL
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-MODEL_PATH = os.path.join(
-    BASE_DIR,
-    "..",
-    "best.pt"
-)
-
+# 🔥 MODEL SETUP
+MODEL_PATH = os.path.join(BASE_DIR, "best.pt")
 model = YOLO(MODEL_PATH)
 
 # 🔥 CLASSES
@@ -48,17 +43,12 @@ SUGGESTIONS = {
 # 🔥 IMPROVED AI HEATMAP
 # ------------------------------------------------
 def create_heatmap(image_path, detections):
-
     image = cv2.imread(image_path)
-
     h, w = image.shape[:2]
-
     heatmap = np.zeros((h, w), dtype=np.float32)
 
     for det in detections:
-
         x1, y1, x2, y2 = map(int, det["bbox"])
-
         conf = float(det["confidence"])
 
         overlay = np.zeros((h, w), dtype=np.float32)
@@ -103,7 +93,6 @@ def create_heatmap(image_path, detections):
     )
 
     heatmap = heatmap.astype(np.uint8)
-
     heatmap_color = cv2.applyColorMap(
         heatmap,
         cv2.COLORMAP_JET
@@ -124,17 +113,13 @@ def create_heatmap(image_path, detections):
 # ------------------------------------------------
 @upload_bp.route("/upload", methods=["POST"])
 def upload_file():
-
     try:
-
         if 'file' not in request.files:
-
             return jsonify({
                 "error": "No file received"
             }), 400
 
         file = request.files['file']
-
         email = request.form.get("email")
 
         # 🔥 SAVE ORIGINAL IMAGE
@@ -163,12 +148,10 @@ def upload_file():
         raw_output = []
 
         for r in results:
-
             if r.boxes is None:
                 continue
 
             for box in r.boxes:
-
                 cls_id = int(box.cls)
 
                 if cls_id >= len(CLASS_NAMES):
@@ -177,15 +160,11 @@ def upload_file():
                 class_name = CLASS_NAMES[cls_id]
 
                 raw_output.append({
-
                     "class": class_name,
-
                     "confidence": float(box.conf),
-
                     "bbox": list(
                         map(float, box.xyxy[0])
                     ),
-
                     "suggestion": SUGGESTIONS.get(
                         class_name,
                         "Consult dentist"
@@ -193,28 +172,20 @@ def upload_file():
                 })
 
         # ------------------------------------------------
-        # 🔥 KEEP ALL DETECTIONS
-        # ------------------------------------------------
-                # ------------------------------------------------
         # 🔥 REMOVE DUPLICATE CLASSES
         # Keep only highest confidence detection
         # ------------------------------------------------
-
         unique_classes = {}
 
         for det in raw_output:
-
             cls = det["class"]
 
             if cls not in unique_classes:
-
                 unique_classes[cls] = det
-
             elif (
                 det["confidence"]
                 > unique_classes[cls]["confidence"]
             ):
-
                 unique_classes[cls] = det
 
         output = list(
@@ -227,6 +198,7 @@ def upload_file():
             key=lambda x: x["confidence"],
             reverse=True
         )
+        
         # 🔥 TOP DEFECT
         top_defect = (
             output[0]["class"]
@@ -238,23 +210,17 @@ def upload_file():
         # 💾 SAVE DATABASE
         # ------------------------------------------------
         reports.insert_one({
-
             "email": email,
-
             "file": filename,
-
             "result": output,
-
             "top_defect": top_defect
         })
 
         # ------------------------------------------------
-        # 📄 GENERATE PDF
+        # 📄 GENERATE PDF (Fixed Name Truncation)
         # ------------------------------------------------
-        pdf_name = (
-            f"{filename.split('.')[0]}"
-            f"_report.pdf"
-        )
+        base_name = os.path.splitext(filename)[0]
+        pdf_name = f"{base_name}_report.pdf"
 
         pdf_path = os.path.join(
             UPLOAD_FOLDER,
@@ -278,7 +244,6 @@ def upload_file():
         )
 
         for r in results:
-
             plotted = r.plot(
                 labels=True,
                 conf=True
@@ -315,39 +280,29 @@ def upload_file():
         # 🔥 RESPONSE
         # ------------------------------------------------
         return jsonify({
-
             "message": "Analysis complete",
-
             "file": filename,
-
             "image": detected_name,
-
             "heatmap": heatmap_name,
-
             "pdf": pdf_name,
-
             "predictions": output,
-
             "top_defect": top_defect
         })
 
     except Exception as e:
-
         print("❌ Upload Error:", str(e))
-
         return jsonify({
             "error": str(e)
         }), 500
 
 
 # ------------------------------------------------
-# 📂 SERVE FILES
+# 📂 SERVE FILES (Fixed Directory Context)
 # ------------------------------------------------
 @upload_bp.route('/uploads/<path:filename>')
 def serve_upload(filename):
-
     return send_from_directory(
-        UPLOAD_FOLDER,
+        os.path.abspath(UPLOAD_FOLDER),
         filename
     )
 
@@ -357,9 +312,7 @@ def serve_upload(filename):
 # ------------------------------------------------
 @upload_bp.route("/share", methods=["POST"])
 def share_report():
-
     try:
-
         data = request.get_json()
 
         email = data.get("email")
@@ -375,10 +328,7 @@ def share_report():
                 "error": "File missing"
             }), 400
 
-        base_name = os.path.splitext(
-            file_name
-        )[0]
-
+        base_name = os.path.splitext(file_name)[0]
         pdf_name = f"{base_name}_report.pdf"
 
         pdf_path = os.path.join(
@@ -403,29 +353,26 @@ def share_report():
         })
 
     except Exception as e:
-
         return jsonify({
             "error": str(e)
         }), 500
+
+
 # ------------------------------------------------
 # 📜 HISTORY
 # ------------------------------------------------
 @upload_bp.route("/history/<email>", methods=["GET"])
 def history(email):
-
     try:
-
         data = list(
             reports.find(
                 {"email": email},
                 {"_id": 0}
             )
         )
-
         return jsonify(data)
 
     except Exception as e:
-
         return jsonify({
             "error": str(e)
         }), 500

@@ -5,6 +5,8 @@ from routes.auth_routes import auth_bp
 from flask_mail import Mail
 
 app = Flask(__name__)
+
+# Enabled CORS to handle cross-origin frontend requests safely
 CORS(app)
 
 # 📧 Mail config
@@ -16,9 +18,10 @@ app.config["MAIL_PASSWORD"] = "gdqj wbja jatf pbal"
 
 mail = Mail(app)
 
-# Routes
+# Register Blueprints without prefixes 
+# Routes will be accessible on: http://localhost:5000/
 app.register_blueprint(upload_bp)
 app.register_blueprint(auth_bp)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, port=5000)
